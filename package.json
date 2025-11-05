@@ -1,4 +1,9 @@
 {
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -6,7 +11,8 @@
     "jsonwebtoken": "^9.0.2",
     "module-alias": "^2.2.3",
     "morgan": "^1.10.1",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7"
   },
   "_moduleAliases": {
     "@controllers": "src/controllers",
@@ -16,5 +22,8 @@
     "@config": "src/config",
     "@middlewares": "src/middlewares",
     "@utils": "src/utils"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
   }
 }

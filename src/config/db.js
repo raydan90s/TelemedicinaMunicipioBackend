@@ -1,21 +1,15 @@
-const { Pool } = require('pg');
-require('dotenv').config({ path: '../.env' });
+import postgres from 'postgres';
+import dotenv from 'dotenv';
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
+dotenv.config({ path: '../.env' });
 
-pool.connect()
-  .then(client => {
-    console.log('✅ Conexión a PostgreSQL exitosa');
-    client.release();
-  })
-  .catch(err => {
-    console.error('❌ Error al conectar a PostgreSQL', err.stack);
-  });
+const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
 
-module.exports = pool;
+try {
+  const testConnection = await sql`SELECT NOW()`;
+  console.log('✅ Conexión a PostgreSQL (Supabase) exitosa:', testConnection[0].now);
+} catch (err) {
+  console.error('❌ Error al conectar a PostgreSQL:', err.message);
+}
+
+export default sql;
