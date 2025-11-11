@@ -1,0 +1,156 @@
+import sql from '@config/db.js';
+import bcrypt from 'bcrypt';
+
+const Usuario = {
+  async findByEmailOrCedula(identifier) {
+    const result = await sql`
+      SELECT * FROM usuarios 
+      WHERE email = ${identifier} OR cedula = ${identifier}
+    `;
+    return result[0];
+  },
+
+  async getRolesYPermisos(usuarioId) {
+    const result = await sql`
+      SELECT 
+        r.id AS rol_id,
+        r.nombre AS rol_nombre,
+        p.id AS permiso_id,
+        p.nombre AS permiso_nombre
+      FROM roles r
+      JOIN roles_usuarios ru ON ru.rol_id = r.id
+      LEFT JOIN roles_permisos rp ON rp.rol_id = r.id
+      LEFT JOIN permisos p ON p.id = rp.permiso_id
+      WHERE ru.usuario_id = ${usuarioId}
+    `;
+    return result;
+  },
+
+  async validateLogin(identifier, password) {
+    const user = await this.findByEmailOrCedula(identifier);
+    if (!user) return null;
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch || !user.estado_id) return null;
+
+    const rolesYPermisos = await this.getRolesYPermisos(user.id);
+
+    const roles = {};
+    for (const row of rolesYPermisos) {
+      if (!roles[row.rol_nombre]) roles[row.rol_nombre] = [];
+      if (row.permiso_nombre) roles[row.rol_nombre].push(row.permiso_nombre);
+    }
+
+    return { ...user, roles };
+  },
+
+  async create(userData) {
+    const {
+      cedula,
+      email,
+      password,
+      primer_nombre,
+      segundo_nombre,
+      primer_apellido,
+      segundo_apellido,
+      genero_id,
+      estado_id = 1, // Estado activo por defecto
+      rol_id = 3, // Rol paciente por defecto (ajustar según tu BD)
+      // Datos adicionales para pacientes
+      fecha_nacimiento,
+      numero_celular,
+      pais_id,
+      lugar_residencia,
+      grupo_sanguineo_id,
+      estilo_vida_id,
+      // Datos adicionales para médicos
+      licencia_medica,
+      pasaporte,
+      especialidades = []
+    } = userData;
+
+    // Validar que no exista el usuario
+    const existente = await this.findByEmailOrCedula(cedula || email);
+    if (existente) {
+      throw new Error('El usuario ya existe con ese email o cédula');
+    }
+
+    // Hash de la contraseña
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    try {
+      // Iniciar transacción
+      const [usuario] = await sql.begin(async sql => {
+        // 1. Crear usuario
+        const [nuevoUsuario] = await sql`
+          INSERT INTO usuarios (
+            cedula, email, password_hash, 
+            primer_nombre, segundo_nombre, 
+            primer_apellido, segundo_apellido,
+            genero_id, estado_id
+          ) VALUES (
+            ${cedula}, ${email}, ${password_hash},
+            ${primer_nombre}, ${segundo_nombre || null},
+            ${primer_apellido}, ${segundo_apellido || null},
+            ${genero_id}, ${estado_id}
+          )
+          RETURNING *
+        `;
+
+        // 2. Asignar rol
+        await sql`
+          INSERT INTO roles_usuarios (usuario_id, rol_id)
+          VALUES (${nuevoUsuario.id}, ${rol_id})
+        `;
+
+        // 3. Si es paciente, crear registro en tabla pacientes
+        if (rol_id === 3 && fecha_nacimiento) {
+          await sql`
+            INSERT INTO pacientes (
+              usuario_id, fecha_nacimiento, numero_celular,
+              pais_id, lugar_residencia, 
+              grupo_sanguineo_id, estilo_vida_id
+            ) VALUES (
+              ${nuevoUsuario.id}, ${fecha_nacimiento}, ${numero_celular || null},
+              ${pais_id}, ${lugar_residencia || null},
+              ${grupo_sanguineo_id}, ${estilo_vida_id}
+            )
+          `;
+
+          // Crear historia clínica
+          await sql`
+            INSERT INTO historias_clinicas (paciente_id)
+            VALUES (${nuevoUsuario.id})
+          `;
+        }
+
+        // 4. Si es médico, crear registro en tabla medicos
+        if (rol_id === 2 && licencia_medica) {
+          await sql`
+            INSERT INTO medicos (usuario_id, licencia_medica, pasaporte)
+            VALUES (${nuevoUsuario.id}, ${licencia_medica}, ${pasaporte || null})
+          `;
+
+          // Asignar especialidades
+          if (especialidades.length > 0) {
+            for (const especialidad_id of especialidades) {
+              await sql`
+                INSERT INTO medicos_especialidades (medico_id, especialidad_id, principal)
+                VALUES (${nuevoUsuario.id}, ${especialidad_id}, ${especialidades[0] === especialidad_id})
+              `;
+            }
+          }
+        }
+
+        return [nuevoUsuario];
+      });
+
+      return usuario;
+    } catch (error) {
+      throw error;
+    }
+  }
+};
+
+export default Usuario;

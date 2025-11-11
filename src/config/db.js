@@ -1,15 +1,19 @@
 import postgres from 'postgres';
-import dotenv from 'dotenv';
 
-dotenv.config({ path: '../.env' });
+const sql = postgres(process.env.DATABASE_URL, { 
+  ssl: 'require',
+  onnotice: () => {}
+});
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
-
-try {
-  const testConnection = await sql`SELECT NOW()`;
-  console.log('✅ Conexión a PostgreSQL (Supabase) exitosa:', testConnection[0].now);
-} catch (err) {
-  console.error('❌ Error al conectar a PostgreSQL:', err.message);
-}
+export const testConnection = async () => {
+  try {
+    const result = await sql`SELECT NOW()`;
+    console.log('✅ Conexión a PostgreSQL (Supabase) exitosa:', result[0].now);
+    return true;
+  } catch (err) {
+    console.error('❌ Error al conectar a PostgreSQL:', err.message);
+    return false;
+  }
+};
 
 export default sql;

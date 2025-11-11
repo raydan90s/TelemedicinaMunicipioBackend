@@ -1,27 +1,19 @@
 {
   "type": "module",
+  "name": "telemedicina-backend",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node --loader ./loader.js src/server.js",
+    "dev": "nodemon --loader ./loader.js src/server.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "module-alias": "^2.2.3",
     "morgan": "^1.10.1",
     "pg": "^8.16.3",
     "postgres": "^3.4.7"
-  },
-  "_moduleAliases": {
-    "@controllers": "src/controllers",
-    "@models": "src/models",
-    "@routes": "src/routes",
-    "@services": "src/services",
-    "@config": "src/config",
-    "@middlewares": "src/middlewares",
-    "@utils": "src/utils"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
