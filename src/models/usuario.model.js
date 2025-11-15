@@ -96,7 +96,7 @@ const Usuario = {
         `;
 
         // 3. Si es paciente, crear registro BÁSICO (sin datos médicos)
-        if (rol_id === 2) {
+        if (rol_id === 1) {
           await sql`
             INSERT INTO pacientes (
               usuario_id, 

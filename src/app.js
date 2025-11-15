@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import sql from '@config/db.js';
 import usuarioRouter from '@routes/usuario.route.js';
 import generoRouter from '@routes/genero.route.js';
+import rolesRouter from '@routes/roles.route.js';
 
 const app = express();
 app.use(morgan('dev'));
@@ -30,5 +31,6 @@ app.get('/', async (req, res) => {
 
 app.use('/usuarios', usuarioRouter);
 app.use('/genero', generoRouter);
+app.use('/roles', rolesRouter);
 
 export default app;
