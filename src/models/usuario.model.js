@@ -44,6 +44,7 @@ const Usuario = {
     return { ...user, roles };
   },
 
+  // MÉTODO SIMPLIFICADO - Solo datos esenciales
   async create(userData) {
     const {
       cedula,
@@ -54,19 +55,9 @@ const Usuario = {
       primer_apellido,
       segundo_apellido,
       genero_id,
-      estado_id = 1, // Estado activo por defecto
-      rol_id = 3, // Rol paciente por defecto (ajustar según tu BD)
-      // Datos adicionales para pacientes
-      fecha_nacimiento,
       numero_celular,
-      pais_id,
-      lugar_residencia,
-      grupo_sanguineo_id,
-      estilo_vida_id,
-      // Datos adicionales para médicos
-      licencia_medica,
-      pasaporte,
-      especialidades = []
+      estado_id = 1,
+      rol_id = 2 // Paciente por defecto
     } = userData;
 
     // Validar que no exista el usuario
@@ -104,17 +95,25 @@ const Usuario = {
           VALUES (${nuevoUsuario.id}, ${rol_id})
         `;
 
-        // 3. Si es paciente, crear registro en tabla pacientes
-        if (rol_id === 3 && fecha_nacimiento) {
+        // 3. Si es paciente, crear registro BÁSICO (sin datos médicos)
+        if (rol_id === 2) {
           await sql`
             INSERT INTO pacientes (
-              usuario_id, fecha_nacimiento, numero_celular,
-              pais_id, lugar_residencia, 
-              grupo_sanguineo_id, estilo_vida_id
+              usuario_id, 
+              fecha_nacimiento, 
+              pais_id, 
+              lugar_residencia,
+              numero_celular,
+              grupo_sanguineo_id, 
+              estilo_vida_id
             ) VALUES (
-              ${nuevoUsuario.id}, ${fecha_nacimiento}, ${numero_celular || null},
-              ${pais_id}, ${lugar_residencia || null},
-              ${grupo_sanguineo_id}, ${estilo_vida_id}
+              ${nuevoUsuario.id}, 
+              NULL, 
+              1, 
+              NULL,
+              ${numero_celular || null},
+              NULL, 
+              NULL
             )
           `;
 
@@ -125,22 +124,12 @@ const Usuario = {
           `;
         }
 
-        // 4. Si es médico, crear registro en tabla medicos
-        if (rol_id === 2 && licencia_medica) {
+        // 4. Si es médico, crear registro básico (sin especialidades)
+        if (rol_id === 2) {
           await sql`
             INSERT INTO medicos (usuario_id, licencia_medica, pasaporte)
-            VALUES (${nuevoUsuario.id}, ${licencia_medica}, ${pasaporte || null})
+            VALUES (${nuevoUsuario.id}, 'PENDIENTE', NULL)
           `;
-
-          // Asignar especialidades
-          if (especialidades.length > 0) {
-            for (const especialidad_id of especialidades) {
-              await sql`
-                INSERT INTO medicos_especialidades (medico_id, especialidad_id, principal)
-                VALUES (${nuevoUsuario.id}, ${especialidad_id}, ${especialidades[0] === especialidad_id})
-              `;
-            }
-          }
         }
 
         return [nuevoUsuario];

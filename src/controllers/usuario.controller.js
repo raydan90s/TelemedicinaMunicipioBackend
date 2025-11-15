@@ -67,7 +67,10 @@ export const tokenUsuario = async (req, res) => {
   }
 };
 
+// REGISTRO SIMPLIFICADO - Solo datos esenciales
 export const registrarUsuario = async (req, res) => {
+  console.log('📝 DATOS RECIBIDOS EN REGISTRO:', req.body);
+  console.log('🔍 VALIDANDO SOLO CAMPOS BÁSICOS...');
   try {
     const {
       cedula,
@@ -78,21 +81,11 @@ export const registrarUsuario = async (req, res) => {
       primer_apellido,
       segundo_apellido,
       genero_id,
-      tipo_usuario, // 'paciente' o 'medico'
-      // Datos de paciente
-      fecha_nacimiento,
       numero_celular,
-      pais_id,
-      lugar_residencia,
-      grupo_sanguineo_id,
-      estilo_vida_id,
-      // Datos de médico
-      licencia_medica,
-      pasaporte,
-      especialidades
+      tipo_usuario // 'paciente' o 'medico' (opcional, default: paciente)
     } = req.body;
 
-    // Validaciones básicas
+    // ===== VALIDACIONES BÁSICAS (SOLO CAMPOS ESENCIALES) =====
     if (!cedula || !email || !password || !primer_nombre || !primer_apellido || !genero_id) {
       return res.status(400).json({
         success: false,
@@ -117,27 +110,10 @@ export const registrarUsuario = async (req, res) => {
       });
     }
 
-    // Determinar rol según tipo de usuario
-    let rol_id;
-    if (tipo_usuario === 'medico') {
-      rol_id = 2;
-      if (!licencia_medica) {
-        return res.status(400).json({
-          success: false,
-          message: 'La licencia médica es requerida para médicos'
-        });
-      }
-    } else {
-      rol_id = 3; // Paciente por defecto
-      if (!fecha_nacimiento || !pais_id || !grupo_sanguineo_id || !estilo_vida_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'Faltan campos requeridos para paciente: fecha_nacimiento, pais_id, grupo_sanguineo_id, estilo_vida_id'
-        });
-      }
-    }
+    // Por defecto todos se registran como pacientes
+    const rol_id = tipo_usuario === 'medico' ? 1 : 2;
 
-    // Crear usuario
+    // ===== CREAR USUARIO CON DATOS BÁSICOS =====
     const nuevoUsuario = await Usuario.create({
       cedula,
       email,
@@ -147,24 +123,16 @@ export const registrarUsuario = async (req, res) => {
       primer_apellido,
       segundo_apellido,
       genero_id,
-      estado_id: 1, // Activo
-      rol_id,
-      fecha_nacimiento,
       numero_celular,
-      pais_id,
-      lugar_residencia,
-      grupo_sanguineo_id,
-      estilo_vida_id,
-      licencia_medica,
-      pasaporte,
-      especialidades
+      estado_id: 1, // Activo
+      rol_id
     });
 
     // Generar token
     const token = generateToken({
       id: nuevoUsuario.id,
       email: nuevoUsuario.email,
-      roles: { [tipo_usuario === 'medico' ? 'Médico' : 'Paciente']: [] }
+      roles: { [rol_id === 2 ? 'Médico' : 'Paciente']: [] }
     });
 
     res.status(201).json({
