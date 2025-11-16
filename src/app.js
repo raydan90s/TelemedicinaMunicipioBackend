@@ -5,7 +5,8 @@ import sql from '@config/db.js';
 import usuarioRouter from '@routes/usuario.route.js';
 import generoRouter from '@routes/genero.route.js';
 import rolesRouter from '@routes/roles.route.js';
-
+import citaRouter from '@routes/cita.route.js';        // ⬅️ NUEVO
+import pacienteRouter from '@routes/paciente.route.js';
 const app = express();
 app.use(morgan('dev'));
 
@@ -32,5 +33,7 @@ app.get('/', async (req, res) => {
 app.use('/usuarios', usuarioRouter);
 app.use('/genero', generoRouter);
 app.use('/roles', rolesRouter);
+app.use('/citas', citaRouter);           // ⬅️ NUEVO
+app.use('/pacientes', pacienteRouter); 
 
 export default app;
