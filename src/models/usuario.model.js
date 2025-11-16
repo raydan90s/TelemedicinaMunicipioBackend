@@ -59,20 +59,16 @@ const Usuario = {
       roleCode = 'PACIENTE'
     } = userData;
 
-    // Validar que no exista el usuario
     const existente = await this.findByEmailOrCedula(cedula || email);
     if (existente) {
       throw new Error('El usuario ya existe con ese email o cédula');
     }
 
-    // Hash de la contraseña
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
     try {
-      // Iniciar transacción
       const [usuario] = await sql.begin(async sql => {
-        // 0. Buscar el rol por código (DINÁMICO) - USAR MINÚSCULAS
         const [rol] = await sql`
           SELECT id, rolecode, nombre
           FROM roles
@@ -83,9 +79,6 @@ const Usuario = {
           throw new Error(`Rol con código '${roleCode}' no encontrado`);
         }
 
-        console.log(`✅ Rol encontrado: ${rol.nombre} (ID: ${rol.id}, Code: ${rol.rolecode})`);
-
-        // 1. Crear usuario
         const [nuevoUsuario] = await sql`
           INSERT INTO usuarios (
             cedula, email, password_hash, 
@@ -101,21 +94,14 @@ const Usuario = {
           RETURNING *
         `;
 
-        console.log(`✅ Usuario creado: ${nuevoUsuario.id}`);
-
-        // 2. Asignar rol (usando el ID dinámico)
         await sql`
           INSERT INTO roles_usuarios (usuario_id, rol_id)
           VALUES (${nuevoUsuario.id}, ${rol.id})
         `;
 
-        console.log(`✅ Rol asignado: ${rol.nombre}`);
 
-        // 3. Crear registros específicos según el rolecode (MINÚSCULAS)
         switch (rol.rolecode) {
           case 'PACIENTE':
-            console.log('📝 Creando registro de paciente...');
-            // Crear registro BÁSICO de paciente
             await sql`
               INSERT INTO pacientes (
                 usuario_id, 
@@ -136,37 +122,26 @@ const Usuario = {
               )
             `;
 
-            // Crear historia clínica
             await sql`
               INSERT INTO historias_clinicas (paciente_id)
               VALUES (${nuevoUsuario.id})
             `;
-            console.log('✅ Paciente y historia clínica creados');
             break;
 
           case 'MEDICO':
-            console.log('📝 Creando registro de médico...');
-            // Crear registro básico de médico
             await sql`
               INSERT INTO medicos (usuario_id, licencia_medica, pasaporte)
               VALUES (${nuevoUsuario.id}, NULL, NULL)
             `;
-            console.log('✅ Médico creado');
-            break;
-
-          case 'ADMIN':
-            console.log('✅ Administrador creado (sin tabla específica)');
             break;
 
           default:
-            console.log(`⚠️ Rol '${rol.rolecode}' no tiene tabla específica`);
             break;
         }
 
         return [nuevoUsuario];
       });
 
-      console.log(`✅ Registro completo exitoso para usuario ID: ${usuario.id}`);
       return usuario;
     } catch (error) {
       console.error('❌ Error en create usuario:', error);
