@@ -94,3 +94,15 @@ export const eliminarRol = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al eliminar el rol' });
   }
 };
+
+export const findByCode = async (code) => {
+  const query = `
+    SELECT id, nombre, descripcion, roleCode
+    FROM roles
+    WHERE roleCode = $1
+  `;
+  
+  const result = await pool.query(query, [code]);
+  
+  return result.rows[0] || null;
+};

@@ -1,4 +1,5 @@
 import Usuario from '@models/usuario.model.js';
+import Roles from '@models/roles.model.js';
 import { generateToken, verifyToken } from '@utils/jwt.util.js';
 
 export const loginUsuario = async (req, res) => {
@@ -67,10 +68,8 @@ export const tokenUsuario = async (req, res) => {
   }
 };
 
-// REGISTRO SIMPLIFICADO - Solo datos esenciales
 export const registrarUsuario = async (req, res) => {
   console.log('📝 DATOS RECIBIDOS EN REGISTRO:', req.body);
-  console.log('🔍 VALIDANDO SOLO CAMPOS BÁSICOS...');
   try {
     const {
       cedula,
@@ -82,10 +81,9 @@ export const registrarUsuario = async (req, res) => {
       segundo_apellido,
       genero_id,
       numero_celular,
-      tipo_usuario // 'paciente' o 'medico' (opcional, default: paciente)
+      roleCode 
     } = req.body;
 
-    // ===== VALIDACIONES BÁSICAS (SOLO CAMPOS ESENCIALES) =====
     if (!cedula || !email || !password || !primer_nombre || !primer_apellido || !genero_id) {
       return res.status(400).json({
         success: false,
@@ -93,7 +91,13 @@ export const registrarUsuario = async (req, res) => {
       });
     }
 
-    // Validar formato de email
+    if (!roleCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo roleCode es obligatorio'
+      });
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -102,7 +106,6 @@ export const registrarUsuario = async (req, res) => {
       });
     }
 
-    // Validar longitud de contraseña
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
@@ -110,10 +113,17 @@ export const registrarUsuario = async (req, res) => {
       });
     }
 
-    // Por defecto todos se registran como pacientes
-    const rol_id = tipo_usuario === 'medico' ? 1 : 2;
+    const rol = await Roles.findByCode(roleCode);
+    
+    if (!rol) {
+      return res.status(400).json({
+        success: false,
+        message: `Rol con código '${roleCode}' no encontrado`
+      });
+    }
 
-    // ===== CREAR USUARIO CON DATOS BÁSICOS =====
+    console.log(`✅ Rol encontrado: ${rol.nombre} (ID: ${rol.id})`);
+
     const nuevoUsuario = await Usuario.create({
       cedula,
       email,
@@ -125,14 +135,16 @@ export const registrarUsuario = async (req, res) => {
       genero_id,
       numero_celular,
       estado_id: 1, // Activo
-      rol_id
+      rol_id: rol.id, // ID dinámico del rol
+      rol_code: rol.roleCode // Guardar también el código
     });
 
-    // Generar token
+    console.log(`✅ Usuario creado con rol: ${rol.nombre}`);
+
     const token = generateToken({
       id: nuevoUsuario.id,
       email: nuevoUsuario.email,
-      roles: { [rol_id === 2 ? 'Médico' : 'Paciente']: [] }
+      roles: { [rol.nombre]: [] }
     });
 
     res.status(201).json({
@@ -145,11 +157,16 @@ export const registrarUsuario = async (req, res) => {
         primer_nombre: nuevoUsuario.primer_nombre,
         primer_apellido: nuevoUsuario.primer_apellido,
         verificado: nuevoUsuario.verificado,
+        rol: {
+          id: rol.id,
+          nombre: rol.nombre,
+          code: rol.roleCode
+        }
       },
       token
     });
   } catch (error) {
-    console.error('Error en registrarUsuario:', error);
+    console.error('❌ Error en registrarUsuario:', error);
     
     if (error.message === 'El usuario ya existe con ese email o cédula') {
       return res.status(409).json({

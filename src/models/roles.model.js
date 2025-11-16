@@ -16,7 +16,7 @@ const Roles = {
 
   async findByCode(code) {
     const result = await sql`
-      SELECT * FROM roles WHERE code = ${code}
+      SELECT * FROM roles WHERE rolecode = ${code}
     `;
     return result[0];
   },
@@ -25,7 +25,7 @@ const Roles = {
     const { nombre, descripcion, code } = data;
 
     const [nuevo] = await sql`
-      INSERT INTO roles (nombre, descripcion, code)
+      INSERT INTO roles (nombre, descripcion, rolecode)
       VALUES (${nombre}, ${descripcion || null}, ${code || null})
       RETURNING *
     `;
@@ -41,7 +41,7 @@ const Roles = {
       SET 
         nombre = ${nombre},
         descripcion = ${descripcion || null},
-        code = ${code || null}
+        rolecode = ${code || null}
       WHERE id = ${id}
       RETURNING *
     `;
