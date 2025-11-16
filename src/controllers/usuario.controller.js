@@ -69,7 +69,6 @@ export const tokenUsuario = async (req, res) => {
 };
 
 export const registrarUsuario = async (req, res) => {
-  console.log('📝 DATOS RECIBIDOS EN REGISTRO:', req.body);
   try {
     const {
       cedula,
@@ -122,8 +121,6 @@ export const registrarUsuario = async (req, res) => {
       });
     }
 
-    console.log(`✅ Rol encontrado: ${rol.nombre} (ID: ${rol.id})`);
-
     const nuevoUsuario = await Usuario.create({
       cedula,
       email,
@@ -135,11 +132,9 @@ export const registrarUsuario = async (req, res) => {
       genero_id,
       numero_celular,
       estado_id: 1, // Activo
-      rol_id: rol.id, // ID dinámico del rol
-      rol_code: rol.roleCode // Guardar también el código
+      rol_id: rol.id, 
+      rol_code: rol.roleCode 
     });
-
-    console.log(`✅ Usuario creado con rol: ${rol.nombre}`);
 
     const token = generateToken({
       id: nuevoUsuario.id,
