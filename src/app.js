@@ -7,6 +7,7 @@ import generoRouter from '@routes/genero.route.js';
 import rolesRouter from '@routes/roles.route.js';
 import citaRouter from '@routes/cita.route.js';        // ⬅️ NUEVO
 import pacienteRouter from '@routes/paciente.route.js';
+import medicoRouter from '@routes/medico.route.js';  // ⬅️ NUEVO
 const app = express();
 app.use(morgan('dev'));
 
@@ -35,5 +36,5 @@ app.use('/genero', generoRouter);
 app.use('/roles', rolesRouter);
 app.use('/citas', citaRouter);           // ⬅️ NUEVO
 app.use('/pacientes', pacienteRouter); 
-
+app.use('/medicos', medicoRouter);  // ⬅️ NUEVO
 export default app;
