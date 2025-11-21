@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { authMiddleware } from '@middlewares/auth.middleware.js';
+import { adminMiddleware } from '@middlewares/admin.middleware.js';
 import {
   listarRoles,
   obtenerRol,
@@ -10,13 +12,10 @@ import {
 const router = Router();
 
 router.get('/', listarRoles);
-
 router.get('/:id', obtenerRol);
 
-router.post('/', crearRol);
-
-router.put('/:id', actualizarRol);
-
-router.delete('/:id', eliminarRol);
+router.post('/', authMiddleware, adminMiddleware, crearRol);
+router.put('/:id', authMiddleware, adminMiddleware, actualizarRol);
+router.delete('/:id', authMiddleware, adminMiddleware, eliminarRol);
 
 export default router;

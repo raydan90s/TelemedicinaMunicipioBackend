@@ -8,10 +8,10 @@ const sql = postgres(process.env.DATABASE_URL, {
 export const testConnection = async () => {
   try {
     const result = await sql`SELECT NOW()`;
-    console.log('✅ Conexión a PostgreSQL (Supabase) exitosa:', result[0].now);
+    console.log('Conexión a PostgreSQL (Supabase) exitosa:', result[0].now);
     return true;
   } catch (err) {
-    console.error('❌ Error al conectar a PostgreSQL:', err.message);
+    console.error('Error al conectar a PostgreSQL:', err.message);
     return false;
   }
 };

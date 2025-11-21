@@ -144,9 +144,20 @@ const Usuario = {
 
       return usuario;
     } catch (error) {
-      console.error('❌ Error en create usuario:', error);
+      console.error('Error en create usuario:', error);
       throw error;
     }
+  },
+
+  async updateImageUrl(userId, imageUrl) {
+    const result = await sql`
+      UPDATE usuarios
+      SET image_url = ${imageUrl}
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    
+    return result[0] || null;
   }
 };
 

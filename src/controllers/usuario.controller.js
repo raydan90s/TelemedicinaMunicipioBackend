@@ -1,6 +1,6 @@
 import Usuario from '@models/usuario.model.js';
 import Roles from '@models/roles.model.js';
-import { generateToken, verifyToken } from '@utils/jwt.util.js';
+import { generateToken } from '@utils/jwt.util.js';
 
 export const loginUsuario = async (req, res) => {
   try {
@@ -40,32 +40,11 @@ export const loginUsuario = async (req, res) => {
 };
 
 export const tokenUsuario = async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: 'Token no proporcionado' });
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const data = verifyToken(token);
-    const usuario = await Usuario.findByEmailOrCedula(data.email);
-
-    if (!usuario) {
-      return res.status(401).json({ message: 'Usuario inválido o inactivo' });
-    }
-
-    res.json({
-      usuario: {
-        id: usuario.id,
-        email: usuario.email,
-        primer_nombre: usuario.primer_nombre,
-        primer_apellido: usuario.primer_apellido,
-      },
-      roles: data.roles,
-    });
-  } catch (err) {
-    console.error('Error en tokenUsuario:', err);
-    res.status(401).json({ message: 'Token inválido o expirado' });
-  }
+  // Se usa el auth middleware para asignar req.user
+  res.json({
+    success: true,
+    usuario: req.user,
+  });
 };
 
 export const registrarUsuario = async (req, res) => {
@@ -161,7 +140,7 @@ export const registrarUsuario = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('❌ Error en registrarUsuario:', error);
+    console.error('Error en registrarUsuario:', error);
     
     if (error.message === 'El usuario ya existe con ese email o cédula') {
       return res.status(409).json({
