@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import sql from '@config/db.js';
 import usuarioRouter from '@routes/usuario.route.js';
+import pacienteRouter from '@routes/paciente.route.js';
 import generoRouter from '@routes/genero.route.js';
 import rolesRouter from '@routes/roles.route.js';
 
@@ -24,12 +25,13 @@ app.get('/', async (req, res) => {
       server_time: result[0].now 
     });
   } catch (error) {
-    console.error('❌ Error consultando la BD:', error.message);
+    console.error('Error consultando la BD:', error.message);
     res.status(500).json({ message: 'Error al conectar con la base de datos' });
   }
 });
 
 app.use('/usuarios', usuarioRouter);
+app.use('/pacientes', pacienteRouter);
 app.use('/genero', generoRouter);
 app.use('/roles', rolesRouter);
 
